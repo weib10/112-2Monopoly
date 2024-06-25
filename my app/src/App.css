@@ -1,0 +1,13 @@
+.App {
+  text-align: center;
+  height: 100vh; /* 確保App的高度至少為整個視窗的高度 */
+}
+
+.App-header {
+  background-color: #629ad3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh; /* 保持這一點，使得內容垂直居中 */
+}
