@@ -7,6 +7,7 @@ contract MonopolyGame {
     uint256 private nonce = 0;
 
     // 事件
+    event DiceRolled(address indexed player, uint256 diceResult);
     event PlayerMoved(address player, uint256 newPosition);
 
     // 初始化玩家
@@ -22,6 +23,7 @@ contract MonopolyGame {
         require(isPlayer(msg.sender), "Only a registered player can roll the dice.");
         uint256 dice = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce))) % 6 + 1;
         nonce++;
+        emit DiceRolled(msg.sender, dice); // 廣播骰子結果
         return dice;
     }
 
