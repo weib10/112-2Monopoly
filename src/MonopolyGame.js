@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import Web3 from 'web3';
 import { loadContract } from './utils/load-contract';
-import { paste } from '@testing-library/user-event/dist/paste';
+import dice1 from './component/dice-1.png';
+import dice2 from './component/dice-2.png';
+import dice3 from './component/dice-3.png';
+import dice4 from './component/dice-4.png';
+import dice5 from './component/dice-5.png';
+import dice6 from './component/dice-6.png';
+import './component/MonopolyMap.css';
+
+const diceImages = [dice1, dice2, dice3, dice4, dice5, dice6];
 
 function MonopolyGame() {
     const [web3, setWeb3] = useState(null);
     const [contract, setContract] = useState(null);
     const [positions, setPositions] = useState({});
     const [account, setAccount] = useState(null);
-    const [diceResult, setDiceResult] = useState(null);
+    const [diceResults, setDiceResults] = useState({ dice1: null, dice2: null });
 
     useEffect(() => {
         const init = async () => {
@@ -32,8 +40,9 @@ function MonopolyGame() {
                     console.log("pastevent:", pastEvents);
                     if (pastEvents.length > 0) {
                         const lastEvent = pastEvents[pastEvents.length - 1];
-                        const diceValue = lastEvent.returnValues.diceResult;
-                        setDiceResult(diceValue);
+                        const dice1 = Number(lastEvent.returnValues.dice1);
+                        const dice2 = Number(lastEvent.returnValues.dice2);
+                        setDiceResults({ dice1, dice2 });
                     }
                 } catch (error) {
                     console.error('Error in loading contract or fetching past events:', error);
@@ -60,8 +69,9 @@ function MonopolyGame() {
 
                 if (pastEvents.length > 0) {
                     const lastEvent = pastEvents[pastEvents.length - 1];
-                    const diceValue = lastEvent.returnValues.diceResult;
-                    setDiceResult(diceValue);
+                    const dice1 = Number(lastEvent.returnValues.dice1);
+                    const dice2 = Number(lastEvent.returnValues.dice2);
+                    setDiceResults({ dice1, dice2 });
                 }
             } catch (error) {
                 console.error('Error rolling dice:', error);
@@ -85,12 +95,34 @@ function MonopolyGame() {
         }
     };
 
+    const createCells = (start, end) => (
+        Array.from({ length: end - start + 1 }).map((_, index) => (
+            <div className="cell" key={index + start}>{`Cell ${index + start}`}</div>
+        ))
+    );
+
     return (
-        <div>
+        <div className="Home">
             <h1>Monopoly Game</h1>
-            <button onClick={rollDice}>Roll Dice</button>
+            <div className="monopoly-map">
+                <div className="top">{createCells(1, 10)}</div>
+                <div className="right">{createCells(11, 20)}</div>
+                <div className="bottom">{createCells(21, 30)}</div>
+                <div className="left">{createCells(31, 40)}</div>
+                <div className="dice-area">
+                    {diceResults.dice1 !== null && diceResults.dice2 !== null && (
+                        <>
+                            <img src={diceImages[diceResults.dice1 - 1]} alt={`Dice ${diceResults.dice1}`} className="dice" />
+                            <img src={diceImages[diceResults.dice2 - 1]} alt={`Dice ${diceResults.dice2}`} className="dice" />
+                        </>
+                    )}
+                    <button onClick={rollDice} className="roll-button">Roll</button>
+                </div>
+            </div>
             <button onClick={movePlayer}>Move Player</button>
-            {diceResult !== null && <p>Dice Result: {diceResult}</p>}
+            {diceResults.dice1 !== null && diceResults.dice2 !== null && (
+                <p>Dice Results: {diceResults.dice1}, {diceResults.dice2}</p>
+            )}
             <h2>Player Positions</h2>
             <ul>
                 {Object.keys(positions).map((player, index) => (

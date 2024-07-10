@@ -1,0 +1,75 @@
+.monopoly-map {
+  display: grid;
+  grid-template-columns: 50px auto 50px;
+  grid-template-rows: 50px auto 50px;
+  width: 600px; /* 根據需要調整大小 */
+  height: 600px; /* 根據需要調整大小 */
+  position: relative;
+}
+
+.cell {
+  background-color: #aacff0;
+  border: 1px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 50px;
+  border-radius: 10px; /* 添加圓角，數值可以根據需要調整 */
+}
+
+.top, .bottom {
+  display: flex;
+  grid-column: 2 / 3;
+}
+
+.top .cell, .bottom .cell {
+  width: 100%;
+}
+
+.right, .left {
+  display: flex;
+  flex-direction: column;
+  grid-row: 2 / 3;
+}
+
+.right .cell, .left .cell {
+  height: 100%;
+}
+
+.top {
+  grid-row: 1 / 2;
+}
+
+.bottom {
+  grid-row: 3 / 4;
+}
+
+.right {
+  grid-column: 3 / 4;
+}
+
+.left {
+  grid-column: 1 / 2;
+}
+
+.dice-area {
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.dice {
+  width: 50px; /* 根據圖片大小調整 */
+  margin-bottom: 10px;
+}
+
+.roll-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 10px;
+}
