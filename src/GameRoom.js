@@ -16,6 +16,7 @@ function GameRoom() {
   const [inRoomId, setInRoomId] = useState(null); // 成功創建的房間ID
   const [isCreating, setIsCreating] = useState(false); // 創建房間狀態
   const [isJoining, setIsJoining] = useState(false); // 加入房間狀態
+  const [roomPlayerInfo, setRoomPlayerInfo] = useState({ maxPlayers: 0, currentPlayers: 0 }); // 房間玩家信息
 
   useEffect(() => {
     const init = async () => {
@@ -25,11 +26,29 @@ function GameRoom() {
         setWeb3Api(web3);
         // load contract
         try {
-          const contract = await loadContract("GameRoom", web3);
-          // console.log(contract);
-          setContract(contract);
+          const MonopolyContract = await loadContract("MonopolyGame", web3);
+          console.log(MonopolyContract);
+          setContract(MonopolyContract);
+          // connect account
+          const accounts = await web3.eth.requestAccounts();
+          const accountToLarge = Web3.utils.toChecksumAddress(accounts[0]);
+          setAccount(accountToLarge);  // 轉成有大小寫區別的 address
+          console.log("Connected account:", accountToLarge);
+          // console.log(Web3.utils.toChecksumAddress(accounts[0]).length)
+          const roomsCount = Number(await MonopolyContract.methods.nextRoomId().call()) - 1;
+          // console.log(roomsCount);
+          if(roomsCount > 0){
+            for (let i = 1; i <= roomsCount; i++) {
+              const room = await MonopolyContract.methods.getRoom(i).call();
+              if (room.creator === accountToLarge || room.players.includes(accountToLarge)) {
+                setInRoomId(i.toString());
+                await fetchRoomPlayerInfo(i);
+                break;
+              }
+            }
+          }
         } catch (error) {
-          console.error("Error in loading contract:", error);
+          console.error("Error in loading contract or connecting account:", error);
         }
       } else {
         console.error("No metamask extension detected!");
@@ -39,28 +58,18 @@ function GameRoom() {
     init();
   }, []);
 
-  // 連接錢包
-  const connectWallet = async () => {
-    if (window.ethereum) {
+  const fetchRoomPlayerInfo = async (roomId) => {
+    if (contract) {
       try {
-        const accounts = await web3Api.eth.requestAccounts();
-        const accountToLarge = Web3.utils.toChecksumAddress(accounts[0])
-        setAccount(accountToLarge);  // 轉成有大小寫區別的 address
-        console.log("Connected account:", accountToLarge);
-        // console.log(Web3.utils.toChecksumAddress(accounts[0]).length)
-        const roomsCount = await contract.methods.nextRoomId().call();
-        for (let i = 0; i < roomsCount; i++) {
-          const room = await contract.methods.getRoom(i).call();
-          if (room.creator === accountToLarge || room.players.includes(accountToLarge)) {
-            setInRoomId(i.toString());
-            break;
-          }
-        }
+        const result = await contract.methods.checkPlayerNumInRoom(roomId).call();
+        console.log(result);
+        setRoomPlayerInfo({
+          maxPlayers: Number(result[0]),
+          currentPlayers: Number(result[1]),
+        });
       } catch (error) {
-        console.error("User denied account access");
+        console.error("Error in fetching room player info:", error);
       }
-    } else {
-      console.error("No Ethereum provider detected. Install MetaMask or another wallet provider.");
     }
   };
 
@@ -70,8 +79,9 @@ function GameRoom() {
       setIsCreating(true);  
       try {
         const result = await contract.methods.createRoom(maxPlayers, gameMode, password).send({ from: account, value: web3Api.utils.toWei('1', 'ether')});
-        const newRoomId = result.events.RoomCreated.returnValues.roomId;
+        const newRoomId = Number(result.events.RoomCreated.returnValues.roomId);
         setInRoomId(newRoomId);
+        await fetchRoomPlayerInfo(newRoomId);  // 獲取房間玩家信息
         console.log("Room created with ID:", newRoomId);
         alert(`Room created successfully with ID: ${newRoomId}`);  
       } catch (error) {
@@ -89,6 +99,7 @@ function GameRoom() {
       try {
         await contract.methods.joinRoom(roomId, joinPassword).send({ from: account, value: web3Api.utils.toWei('1', 'ether')});
         setInRoomId(roomId); // 更新createdRoomId
+        await fetchRoomPlayerInfo(roomId);  // 獲取房間玩家信息
         console.log("Joined room:", roomId);
         alert(`Joined room successfully with ID: ${roomId}`);
       } catch (error) {
@@ -107,6 +118,7 @@ function GameRoom() {
         console.log("Left room with ID:", inRoomId);
         alert(`Left room successfully with ID: ${inRoomId}`);
         setInRoomId(null); // 清除房間ID
+        setRoomPlayerInfo({ maxPlayers: 0, currentPlayers: 0 });  // 清除房間玩家信息
       } catch (error) {
         console.error("Error in leaving room: ", error);
         alert("Error in contract transaction: " + error.message);
@@ -114,27 +126,33 @@ function GameRoom() {
     }
   };
 
-  // const withdrawFunds = async () => {
-  //   if (account) {
-  //     try {
-  //       await contract.methods.withdrawFunds().send({ from: account });
-  //       console.log("Funds withdrawn");
-  //       alert("Funds withdrawn successfully");
-  //     } catch (error) {
-  //       console.error("Error in withdrawing funds: ", error);
-  //       alert("Error in contract transaction: " + error.message);
-  //     }
-  //   }
-  // };
+  // 測試用
+  // 退款函數
+  const refund = async () => {
+    if (account) {
+      try {
+        await contract.methods.refund(inRoomId).send({ from: account });
+        console.log("Refunded for room ID:", inRoomId);
+        alert(`Refunded successfully for room ID: ${inRoomId}`);
+        setInRoomId(null); // 清除房間ID
+        setRoomPlayerInfo({ maxPlayers: 0, currentPlayers: 0 });  // 清除房間玩家信息
+      } catch (error) {
+        console.error("Error in refund transaction: ", error);
+        alert("Error in contract transaction: " + error.message);
+      }
+    }
+  };
 
   return (
     <div className="GameRoom">
-      <button onClick={connectWallet} >Connect Wallet</button>
       {account && <p>Connected account: {account}</p>}
       {inRoomId !== null && (
         <div>
           <p>You are already in room with ID: {inRoomId}</p>
+          <p>Waiting for more players join to start {roomPlayerInfo.currentPlayers}/{roomPlayerInfo.maxPlayers}</p>
+          <p><b>Start the MonopolyGame now!!!</b></p>
           <button onClick={leaveRoom} disabled={!account}>Leave Room</button>
+          <button onClick={refund} disabled={!account}>Refund</button> {/* test */}
         </div>
       )}
 

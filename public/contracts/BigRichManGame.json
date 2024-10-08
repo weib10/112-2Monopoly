@@ -25716,12 +25716,12 @@
         }
       },
       "links": {},
-      "address": "0x632F32C13084d21B678c4e6C05D7718846289BB2",
-      "transactionHash": "0xb2dadb33de91a26dbd531e0bba852c9c5a0222904f04427dc8b908c21f34ad00"
+      "address": "0x298cC0836AAB393df55f88561348B32de5a9D4f3",
+      "transactionHash": "0xa9d5445aa7854dbe1a8b61d17af8445a6d83c518eca0d5f1161c2d1a7ef03d30"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2024-07-10T14:59:19.710Z",
+  "updatedAt": "2024-08-14T12:10:18.343Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",

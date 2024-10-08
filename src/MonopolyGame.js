@@ -44,6 +44,12 @@ function MonopolyGame() {
                         const dice2 = Number(lastEvent.returnValues.dice2);
                         setDiceResults({ dice1, dice2 });
                     }
+
+                    // fatch player position
+                    const position = await monopolyGameContract.getPastEvents('PlayerMoved', {filter: { player:accountToLarge},
+                        fromBlock: 'latest',
+                        toBlock: 'lateset'
+                    });
                 } catch (error) {
                     console.error('Error in loading contract or fetching past events:', error);
                 }
@@ -55,11 +61,13 @@ function MonopolyGame() {
         init();
     }, []);
 
-    const rollDice = async () => {
+
+    const movePlayer = async () => {
         if (contract && account) {
             try {
-                await contract.methods.rollDice().send({ from: account });
+                await contract.methods.movePlayer().send({ from: account });
 
+                // 讀取骰子資訊
                 // 获取最新的事件
                 const pastEvents = await contract.getPastEvents('DiceRolled', {
                     filter: { player: account },
@@ -73,20 +81,9 @@ function MonopolyGame() {
                     const dice2 = Number(lastEvent.returnValues.dice2);
                     setDiceResults({ dice1, dice2 });
                 }
-            } catch (error) {
-                console.error('Error rolling dice:', error);
-                alert('Error rolling dice: ' + error.message);
-            }
-        } else {
-            alert('Please connect to MetaMask and select an account.');
-        }
-    };
-
-    const movePlayer = async () => {
-        if (contract && account) {
-            try {
-                await contract.methods.movePlayer().send({ from: account });
+                // 計算move到哪
                 const newPosition = await contract.methods.playerPositions(account).call();
+                console.log("new position:", newPosition);
                 setPositions(prevPositions => ({ ...prevPositions, [account]: newPosition }));
             } catch (error) {
                 console.error('Error moving player:', error);
@@ -116,7 +113,7 @@ function MonopolyGame() {
                             <img src={diceImages[diceResults.dice2 - 1]} alt={`Dice ${diceResults.dice2}`} className="dice" />
                         </>
                     )}
-                    <button onClick={rollDice} className="roll-button">Roll</button>
+                    {/* <button onClick={rollDice} className="roll-button">Roll</button> */} {/*因為應該要由move執行roll*/}
                 </div>
             </div>
             <button onClick={movePlayer}>Move Player</button>
